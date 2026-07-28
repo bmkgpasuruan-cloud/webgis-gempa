@@ -12,12 +12,41 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
   <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,400,0..1,0" rel="stylesheet" />
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
-  <link rel="stylesheet" href="style.css?v=quake-bmkg-live-1" />
+  <link rel="stylesheet" href="style.css?v=quake-20260728-4" />
 </head>
 <body>
   <div id="loadingOverlay" class="loading-overlay" aria-live="polite">
     <div class="loader" aria-hidden="true"></div>
     <p data-i18n="loading">Memuat data gempa...</p>
+  </div>
+
+  <div id="modeChooser" class="mode-chooser" role="dialog" aria-modal="true" aria-labelledby="modeChooserTitle">
+    <div class="mode-chooser-card">
+      <span class="material-symbols-outlined mode-chooser-icon" aria-hidden="true">travel_explore</span>
+      <p class="eyebrow" data-i18n="modeChooserEyebrow">PILIH SUMBER DATA</p>
+      <h2 id="modeChooserTitle" data-i18n="modeChooserTitle">Mau melihat data yang mana?</h2>
+      <p class="mode-chooser-description" data-i18n="modeChooserDescription">Kamu dapat mengganti mode kapan saja melalui tombol di bagian atas.</p>
+
+      <div class="mode-choice-grid">
+        <button class="mode-choice" type="button" data-mode-choice="realtime">
+          <span class="material-symbols-outlined" aria-hidden="true">sensors</span>
+          <span>
+            <strong data-i18n="realtimeModeTitle">Real-time BMKG</strong>
+            <small data-i18n="realtimeModeDescription">Gempa terbaru, gempa M ≥ 5,0, dan gempa dirasakan dari feed BMKG.</small>
+          </span>
+          <span class="material-symbols-outlined mode-choice-arrow" aria-hidden="true">arrow_forward</span>
+        </button>
+
+        <button class="mode-choice" type="button" data-mode-choice="monthly">
+          <span class="material-symbols-outlined" aria-hidden="true">calendar_month</span>
+          <span>
+            <strong data-i18n="monthlyModeTitle">Rekap Bulanan</strong>
+            <small data-i18n="monthlyModeDescription">Rekap 590 kejadian gempa pada periode Juni 2026.</small>
+          </span>
+          <span class="material-symbols-outlined mode-choice-arrow" aria-hidden="true">arrow_forward</span>
+        </button>
+      </div>
+    </div>
   </div>
 
   <header class="topbar">
@@ -31,11 +60,16 @@
         <a href="#mapSection" data-i18n="navMap">Peta</a>
         <a href="#analysisSection" data-i18n="navAnalysis">Analisis</a>
         <a href="#summarySection" data-i18n="navSummary">Ringkasan</a>
-        <span class="source-badge">
-          <span class="material-symbols-outlined" aria-hidden="true">sensors</span>
-          LIVE BMKG
+        <span id="sourceBadge" class="source-badge">
+          <span id="sourceBadgeIcon" class="material-symbols-outlined" aria-hidden="true">sensors</span>
+          <span id="sourceBadgeText">DATA GEMPA</span>
         </span>
       </nav>
+
+      <button id="changeModeButton" class="mode-current-button" type="button" aria-label="Ganti mode data">
+        <span id="currentModeIcon" class="material-symbols-outlined" aria-hidden="true">database</span>
+        <span id="currentModeLabel" data-i18n="chooseMode">Pilih mode</span>
+      </button>
 
       <div class="language-picker">
         <button id="languageToggle" class="language-toggle" type="button" aria-haspopup="menu" aria-expanded="false" aria-controls="languageMenu" aria-label="Pilih bahasa">
@@ -57,10 +91,10 @@
 
   <main id="top">
     <section class="hero" aria-labelledby="dashboardTitle">
-      <p class="eyebrow" data-i18n="heroEyebrow">MONITORING GEMPA TERKINI BMKG</p>
-      <h1 id="dashboardTitle" data-i18n="dashboardTitle">Dashboard Gempa Indonesia</h1>
+      <p id="heroEyebrow" class="eyebrow">MONITORING KEJADIAN GEMPA</p>
+      <h1 id="dashboardTitle">Dashboard Gempa Indonesia</h1>
       <p id="periodLabel" class="subtitle">Memuat periode data...</p>
-      <p id="liveStatus" class="live-status" aria-live="polite">Menghubungkan ke data BMKG...</p>
+      <p id="liveStatus" class="live-status" aria-live="polite"></p>
     </section>
 
     <section class="stats-grid" aria-label="Ringkasan statistik">
@@ -293,8 +327,8 @@
   </main>
 
   <footer class="footer">
-    <p data-i18n="footerSource">© 2026 QuakePulse. Sumber data: BMKG (Badan Meteorologi, Klimatologi, dan Geofisika).</p>
-    <p data-i18n="footerDeveloper">Data diperbarui otomatis setiap 5 menit dari feed resmi BMKG.</p>
+    <p id="footerSource">© 2026 QuakePulse.</p>
+    <p id="footerDeveloper">WebGIS monitoring gempa.</p>
   </footer>
 
   <nav class="bottom-nav" aria-label="Navigasi cepat">
@@ -307,6 +341,6 @@
 
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
-  <script src="app.js?v=quake-bmkg-live-1"></script>
+  <script src="app.js?v=quake-20260728-4"></script>
 </body>
 </html>
