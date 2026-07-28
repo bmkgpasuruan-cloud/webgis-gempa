@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="Dashboard WebGIS monitoring kejadian gempa berdasarkan kedalaman, magnitudo, dan buffer getaran." />
+  <meta name="theme-color" content="#ffffff" />
+  <title>QuakePulse | Monitoring Gempa</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,400,0..1,0" rel="stylesheet" />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
+  <link rel="stylesheet" href="style.css?v=quake-20260728-3" />
+</head>
+<body>
+  <div id="loadingOverlay" class="loading-overlay" aria-live="polite">
+    <div class="loader" aria-hidden="true"></div>
+    <p data-i18n="loading">Memuat data gempa...</p>
+  </div>
+
+  <header class="topbar">
+    <a class="brand" href="#top" aria-label="QuakePulse, kembali ke atas">
+      <span class="material-symbols-outlined brand-icon" aria-hidden="true">earthquake</span>
+      <span>QuakePulse</span>
+    </a>
+
+    <div class="topbar-actions">
+      <nav class="desktop-nav" aria-label="Navigasi utama">
+        <a href="#mapSection" data-i18n="navMap">Peta</a>
+        <a href="#analysisSection" data-i18n="navAnalysis">Analisis</a>
+        <a href="#summarySection" data-i18n="navSummary">Ringkasan</a>
+        <span class="source-badge">
+          <span class="material-symbols-outlined" aria-hidden="true">sensors</span>
+          DATA GEMPA
+        </span>
+      </nav>
+
+      <div class="language-picker">
+        <button id="languageToggle" class="language-toggle" type="button" aria-haspopup="menu" aria-expanded="false" aria-controls="languageMenu" aria-label="Pilih bahasa">
+          <span class="material-symbols-outlined" aria-hidden="true">language</span>
+          <span id="languageCode">ID</span>
+          <span class="material-symbols-outlined language-chevron" aria-hidden="true">expand_more</span>
+        </button>
+        <div id="languageMenu" class="language-menu" role="menu" aria-label="Pilihan bahasa" hidden>
+          <button class="language-option is-selected" type="button" role="menuitemradio" aria-checked="true" data-language="id">
+            <span>Bahasa Indonesia</span><strong>ID</strong>
+          </button>
+          <button class="language-option" type="button" role="menuitemradio" aria-checked="false" data-language="en">
+            <span>English</span><strong>EN</strong>
+          </button>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <main id="top">
+    <section class="hero" aria-labelledby="dashboardTitle">
+      <p class="eyebrow" data-i18n="heroEyebrow">MONITORING KEJADIAN GEMPA</p>
+      <h1 id="dashboardTitle" data-i18n="dashboardTitle">Dashboard Gempa Regional</h1>
+      <p id="periodLabel" class="subtitle">Memuat periode data...</p>
+    </section>
+
+    <section class="stats-grid" aria-label="Ringkasan statistik">
+      <article class="stat-card">
+        <span class="material-symbols-outlined stat-icon" aria-hidden="true">earthquake</span>
+        <div>
+          <p data-i18n="totalQuakesLabel">TOTAL GEMPA</p>
+          <strong id="totalQuakes">–</strong>
+          <small data-i18n="activeFilter">Sesuai filter aktif</small>
+        </div>
+      </article>
+
+      <article class="stat-card">
+        <span class="material-symbols-outlined stat-icon" aria-hidden="true">vertical_align_center</span>
+        <div>
+          <p data-i18n="dominantDepthLabel">KEDALAMAN DOMINAN</p>
+          <strong id="dominantDepth">–</strong>
+          <small id="dominantDepthDetail">–</small>
+        </div>
+      </article>
+
+      <article class="stat-card">
+        <span class="material-symbols-outlined stat-icon" aria-hidden="true">speed</span>
+        <div>
+          <p data-i18n="strongestMagnitudeLabel">MAGNITUDO TERKUAT</p>
+          <strong id="strongestMagnitude">–</strong>
+          <small id="strongestMagnitudeDetail">–</small>
+        </div>
+      </article>
+
+      <article class="stat-card">
+        <span class="material-symbols-outlined stat-icon" aria-hidden="true">straighten</span>
+        <div>
+          <p data-i18n="averageDepthLabel">RATA-RATA KEDALAMAN</p>
+          <strong id="averageDepth">–</strong>
+          <small id="averageDepthDetail" data-i18n="kilometersBelowSurface">Kilometer di bawah permukaan</small>
+        </div>
+      </article>
+    </section>
+
+    <section class="workspace" aria-label="Peta dan filter data">
+      <aside class="control-panel" id="filterPanel">
+        <div class="panel-heading">
+          <div>
+            <p class="eyebrow" data-i18n="filterEyebrow">FILTER DATA</p>
+            <h2 data-i18n="filterTitle">Atur tampilan peta</h2>
+          </div>
+          <button id="resetButton" class="button button-secondary" type="button" data-i18n="reset">Reset</button>
+        </div>
+
+        <div class="date-range-grid" aria-label="Rentang tanggal">
+          <div class="filter-group date-field">
+            <label for="startDate" data-i18n="startDate">Tanggal mulai</label>
+            <input id="startDate" type="date" />
+          </div>
+          <div class="filter-group date-field">
+            <label for="endDate" data-i18n="endDate">Tanggal selesai</label>
+            <input id="endDate" type="date" />
+          </div>
+        </div>
+
+        <div class="filter-group">
+          <span class="district-filter-label" data-i18n="locationLabel">Lokasi kejadian</span>
+          <div id="locationFilter" class="district-multi-select" role="group" aria-label="Pilih satu atau beberapa lokasi">
+            <div class="district-search-box">
+              <input id="locationSearch" class="district-search" type="search" placeholder="Cari lokasi..." aria-label="Cari lokasi" autocomplete="off" spellcheck="false" />
+            </div>
+            <label class="district-option district-option-all">
+              <input id="locationAll" class="location-filter" type="checkbox" value="ALL" checked />
+              <span data-i18n="allLocations">Semua lokasi</span>
+            </label>
+            <div class="district-options-wrap">
+              <div id="locationOptions" class="district-options" aria-label="Daftar lokasi kejadian"></div>
+              <div id="locationSearchEmpty" class="district-search-empty" hidden data-i18n="locationNotFound">Lokasi tidak ditemukan.</div>
+            </div>
+            <small id="locationSelectionSummary" class="district-selection-summary" data-i18n="allLocationsSelected">Semua lokasi dipilih</small>
+          </div>
+        </div>
+
+        <fieldset class="filter-group">
+          <legend data-i18n="depthClass">Kelas kedalaman</legend>
+          <label class="check-row">
+            <input type="checkbox" class="depth-filter" value="Dangkal" checked />
+            <span class="legend-dot dangkal" aria-hidden="true"></span>
+            <span><span data-i18n="shallow">Dangkal</span> <small>&lt; 60 km</small></span>
+          </label>
+          <label class="check-row">
+            <input type="checkbox" class="depth-filter" value="Menengah" checked />
+            <span class="legend-dot menengah" aria-hidden="true"></span>
+            <span><span data-i18n="intermediate">Menengah</span> <small>60–300 km</small></span>
+          </label>
+          <label class="check-row">
+            <input type="checkbox" class="depth-filter" value="Dalam" checked />
+            <span class="legend-dot dalam" aria-hidden="true"></span>
+            <span><span data-i18n="deep">Dalam</span> <small>&gt; 300 km</small></span>
+          </label>
+        </fieldset>
+
+        <fieldset class="filter-group">
+          <legend data-i18n="magnitudeClass">Kelas magnitudo</legend>
+          <label class="check-row magnitude-check">
+            <input type="checkbox" class="magnitude-filter" value="lt3" checked />
+            <span class="magnitude-dot magnitude-small" aria-hidden="true"></span>
+            <span data-i18n="magnitudeLt3">M &lt; 3,0</span>
+          </label>
+          <label class="check-row magnitude-check">
+            <input type="checkbox" class="magnitude-filter" value="3to5" checked />
+            <span class="magnitude-dot magnitude-medium" aria-hidden="true"></span>
+            <span data-i18n="magnitude3To5">3,0 ≤ M &lt; 5,0</span>
+          </label>
+          <label class="check-row magnitude-check">
+            <input type="checkbox" class="magnitude-filter" value="gte5" checked />
+            <span class="magnitude-dot magnitude-large" aria-hidden="true"></span>
+            <span data-i18n="magnitudeGte5">M ≥ 5,0</span>
+          </label>
+        </fieldset>
+
+        <fieldset class="filter-group">
+          <legend data-i18n="layers">Layer</legend>
+          <label class="switch-row">
+            <input id="togglePoints" type="checkbox" checked />
+            <span class="switch" aria-hidden="true"></span>
+            <span data-i18n="earthquakePoints">Titik gempa</span>
+          </label>
+          <label class="switch-row">
+            <input id="toggleBuffers" type="checkbox" checked />
+            <span class="switch" aria-hidden="true"></span>
+            <span data-i18n="estimatedBuffer">Buffer estimasi getaran</span>
+          </label>
+        </fieldset>
+
+        <div class="info-box">
+          <span class="material-symbols-outlined" aria-hidden="true">info</span>
+          <p data-i18n="filterHelp">Klik titik gempa untuk melihat magnitudo, kedalaman, dan estimasi jangkauan getaran.</p>
+        </div>
+
+        <button id="applyFilterButton" class="button filter-done-button" type="button" data-i18n="applyFilter">Terapkan filter</button>
+      </aside>
+
+      <section class="map-card" id="mapSection">
+        <div class="map-toolbar">
+          <div>
+            <p class="eyebrow">WEB MAP</p>
+            <h2 data-i18n="spatialDistribution">Distribusi Spasial Gempa</h2>
+          </div>
+          <div class="map-actions">
+            <button id="filterToggleButton" class="button button-secondary filter-toggle-button" type="button">
+              <span class="material-symbols-outlined" aria-hidden="true">tune</span>
+              <span data-i18n="configureFilter">Atur Filter</span>
+            </button>
+            <button id="fitButton" class="button button-secondary" type="button">
+              <span class="material-symbols-outlined" aria-hidden="true">center_focus_strong</span>
+              <span data-i18n="fitData">Lihat Semua Data</span>
+            </button>
+          </div>
+        </div>
+
+        <div class="map-shell">
+          <div id="map" role="application" aria-label="Peta interaktif kejadian gempa"></div>
+        </div>
+      </section>
+    </section>
+
+    <section id="analysisSection" class="analysis-section">
+      <div class="section-heading">
+        <p class="eyebrow" data-i18n="analysisEyebrow">ANALISIS PARAMETER</p>
+        <h2 data-i18n="analysisTitle">Kedalaman dan Magnitudo</h2>
+      </div>
+
+      <div class="analysis-grid">
+        <article class="chart-card">
+          <div class="card-heading">
+            <div>
+              <p class="eyebrow" data-i18n="depthAnalysis">ANALISIS KEDALAMAN</p>
+              <h2 data-i18n="depthDistribution">Distribusi Kelas Kedalaman</h2>
+            </div>
+          </div>
+          <div class="chart-wrap"><canvas id="depthChart" aria-label="Grafik kelas kedalaman"></canvas></div>
+        </article>
+
+        <article class="chart-card">
+          <div class="card-heading">
+            <div>
+              <p class="eyebrow" data-i18n="magnitudeAnalysis">ANALISIS MAGNITUDO</p>
+              <h2 data-i18n="magnitudeComposition">Komposisi Magnitudo</h2>
+            </div>
+          </div>
+          <div class="chart-wrap"><canvas id="magnitudeChart" aria-label="Grafik komposisi magnitudo"></canvas></div>
+        </article>
+      </div>
+    </section>
+
+    <section id="summarySection" class="summary-grid">
+      <article class="table-card">
+        <div class="table-title">
+          <div>
+            <p class="eyebrow" data-i18n="locationSummary">RINGKASAN LOKASI</p>
+            <h2 data-i18n="topLocations">Lokasi dengan Kejadian Terbanyak</h2>
+          </div>
+          <span id="tableStatus" class="table-status">–</span>
+        </div>
+        <div class="table-scroll">
+          <table>
+            <thead>
+              <tr><th data-i18n="rank">Peringkat</th><th data-i18n="location">Lokasi</th><th data-i18n="total">Total</th></tr>
+            </thead>
+            <tbody id="locationTableBody"></tbody>
+          </table>
+        </div>
+      </article>
+
+      <article class="table-card">
+        <div class="table-title">
+          <div>
+            <p class="eyebrow" data-i18n="strongestEvents">KEJADIAN TERKUAT</p>
+            <h2 data-i18n="topMagnitudeEvents">Top 10 Magnitudo</h2>
+          </div>
+          <span id="eventTableStatus" class="table-status">–</span>
+        </div>
+        <div class="table-scroll">
+          <table>
+            <thead>
+              <tr><th data-i18n="date">Tanggal</th><th>Mag</th><th data-i18n="depth">Kedalaman</th><th data-i18n="location">Lokasi</th></tr>
+            </thead>
+            <tbody id="eventTableBody"></tbody>
+          </table>
+        </div>
+      </article>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <p data-i18n="footerSource">© 2026 QuakePulse. Data diolah dari gempa juni.xlsx.</p>
+    <p data-i18n="footerDeveloper">Dikembangkan sebagai WebGIS gempa statis untuk GitHub Pages.</p>
+  </footer>
+
+  <nav class="bottom-nav" aria-label="Navigasi cepat">
+    <a href="#top"><span class="material-symbols-outlined">home</span><small data-i18n="home">Beranda</small></a>
+    <a href="#mapSection"><span class="material-symbols-outlined">map</span><small data-i18n="navMap">Peta</small></a>
+    <button id="bottomFilterButton" type="button"><span class="material-symbols-outlined">tune</span><small data-i18n="filterNav">Filter</small></button>
+    <a href="#analysisSection"><span class="material-symbols-outlined">analytics</span><small data-i18n="navAnalysis">Analisis</small></a>
+    <a href="#summarySection"><span class="material-symbols-outlined">table_rows</span><small data-i18n="navSummary">Ringkasan</small></a>
+  </nav>
+
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+  <script src="app.js?v=quake-20260728-3"></script>
+</body>
+</html>
