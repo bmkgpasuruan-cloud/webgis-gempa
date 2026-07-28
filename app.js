@@ -1,9 +1,18 @@
 'use strict';
 
-const DATA_PATHS = {
+const BMKG_API_PATHS = {
+  latest: 'https://data.bmkg.go.id/DataMKG/TEWS/autogempa.json',
+  recentM5: 'https://data.bmkg.go.id/DataMKG/TEWS/gempaterkini.json',
+  felt: 'https://data.bmkg.go.id/DataMKG/TEWS/gempadirasakan.json'
+};
+
+const FALLBACK_DATA_PATHS = {
   points: 'data/gempa.geojson',
   metadata: 'data/metadata.json'
 };
+
+const REFRESH_INTERVAL_MS = 5 * 60 * 1000;
+const FETCH_TIMEOUT_MS = 15000;
 
 const DEPTH_CLASSES = ['Dangkal', 'Menengah', 'Dalam'];
 const MAGNITUDE_CLASSES = ['lt3', '3to5', 'gte5'];
@@ -27,8 +36,8 @@ const TRANSLATIONS = {
     navMap: 'Peta',
     navAnalysis: 'Analisis',
     navSummary: 'Ringkasan',
-    heroEyebrow: 'MONITORING KEJADIAN GEMPA',
-    dashboardTitle: 'Dashboard Gempa Regional',
+    heroEyebrow: 'MONITORING GEMPA TERKINI BMKG',
+    dashboardTitle: 'Dashboard Gempa Indonesia',
     totalQuakesLabel: 'TOTAL GEMPA',
     activeFilter: 'Sesuai filter aktif',
     dominantDepthLabel: 'KEDALAMAN DOMINAN',
@@ -68,7 +77,7 @@ const TRANSLATIONS = {
     spatialDistribution: 'Distribusi Spasial Gempa',
     configureFilter: 'Atur Filter',
     fitData: 'Lihat Semua Data',
-    mapNote: 'Buffer merupakan estimasi visualisasi, bukan laporan resmi wilayah dirasakan. Informasi tsunami wajib diverifikasi melalui BMKG.',
+    mapNote: 'Data gempa, wilayah dirasakan, dan potensi tsunami bersumber dari feed resmi BMKG.',
     analysisEyebrow: 'ANALISIS PARAMETER',
     analysisTitle: 'Kedalaman dan Magnitudo',
     depthAnalysis: 'ANALISIS KEDALAMAN',
@@ -86,11 +95,22 @@ const TRANSLATIONS = {
     depth: 'Kedalaman',
     home: 'Beranda',
     filterNav: 'Filter',
-    footerSource: '© 2026 QuakePulse. Data diolah dari gempa juni.xlsx.',
-    footerDeveloper: 'Dikembangkan Oleh: Bintang Evanko.',
+    footerSource: '© 2026 QuakePulse. Sumber data: BMKG (Badan Meteorologi, Klimatologi, dan Geofisika).',
+    footerDeveloper: 'Data diperbarui otomatis setiap 5 menit dari feed resmi BMKG.',
     quakeSingular: 'kejadian',
     quakePlural: 'kejadian',
     dataSummary: '{start} - {end} • {count} kejadian gempa',
+    liveUpdated: 'Data BMKG diperbarui {time}',
+    fallbackActive: 'API BMKG tidak terjangkau • menampilkan data cadangan',
+    realtimeFailed: 'Pembaruan gagal • data terakhir tetap ditampilkan',
+    feltReport: 'Wilayah dirasakan',
+    notFeltReported: 'Belum ada laporan dirasakan pada feed BMKG',
+    tsunamiPotential: 'Potensi tsunami',
+    tsunamiUnavailable: 'Tidak tersedia pada feed ini',
+    shakemap: 'ShakeMap BMKG',
+    openShakemap: 'Buka peta guncangan',
+    bmkgSource: 'Keterangan BMKG',
+    bmkgOfficial: 'BMKG',
     noData: 'Tidak ada data',
     adjustFilter: 'Ubah filter untuk menampilkan data',
     selectedOneLocation: '1 lokasi dipilih: {location}',
@@ -105,7 +125,7 @@ const TRANSLATIONS = {
     magnitudeClassPopup: 'Kelas magnitudo',
     estimatedRadius: 'Estimasi jangkauan',
     tsunamiStatus: 'Indikasi tsunami',
-    estimatedDisclaimer: 'Radius merupakan model visualisasi sederhana, bukan laporan resmi area dirasakan atau ShakeMap.',
+    estimatedDisclaimer: 'Informasi wilayah dirasakan dan potensi tsunami mengikuti data yang tersedia pada feed BMKG.',
     depthLegend: 'Kelas Kedalaman',
     bufferLegend: 'Buffer estimasi',
     countUnit: 'kejadian',
@@ -123,8 +143,8 @@ const TRANSLATIONS = {
     navMap: 'Map',
     navAnalysis: 'Analysis',
     navSummary: 'Summary',
-    heroEyebrow: 'EARTHQUAKE EVENT MONITORING',
-    dashboardTitle: 'Regional Earthquake Dashboard',
+    heroEyebrow: 'LATEST BMKG EARTHQUAKE MONITORING',
+    dashboardTitle: 'Indonesia Earthquake Dashboard',
     totalQuakesLabel: 'TOTAL EARTHQUAKES',
     activeFilter: 'Based on active filters',
     dominantDepthLabel: 'DOMINANT DEPTH',
@@ -164,7 +184,7 @@ const TRANSLATIONS = {
     spatialDistribution: 'Earthquake Spatial Distribution',
     configureFilter: 'Filters',
     fitData: 'View All Data',
-    mapNote: 'The buffer is a visual estimate, not an official felt-area report. Tsunami information must be verified through BMKG.',
+    mapNote: 'Earthquake, felt-area, and tsunami-potential information comes from official BMKG feeds.',
     analysisEyebrow: 'PARAMETER ANALYSIS',
     analysisTitle: 'Depth and Magnitude',
     depthAnalysis: 'DEPTH ANALYSIS',
@@ -182,11 +202,22 @@ const TRANSLATIONS = {
     depth: 'Depth',
     home: 'Home',
     filterNav: 'Filters',
-    footerSource: '© 2026 QuakePulse. Data processed from gempa juni.xlsx.',
-    footerDeveloper: 'Developed By: Bintang Evanko.',
+    footerSource: '© 2026 QuakePulse. Data source: BMKG (Meteorology, Climatology, and Geophysics Agency).',
+    footerDeveloper: 'Data refreshes automatically every 5 minutes from the official BMKG feeds.',
     quakeSingular: 'event',
     quakePlural: 'events',
     dataSummary: '{start} - {end} • {count} earthquake events',
+    liveUpdated: 'BMKG data updated {time}',
+    fallbackActive: 'BMKG API is unavailable • showing fallback data',
+    realtimeFailed: 'Refresh failed • keeping the latest loaded data',
+    feltReport: 'Felt reports',
+    notFeltReported: 'No felt report is available in the BMKG feed',
+    tsunamiPotential: 'Tsunami potential',
+    tsunamiUnavailable: 'Not available in this feed',
+    shakemap: 'BMKG ShakeMap',
+    openShakemap: 'Open shaking map',
+    bmkgSource: 'BMKG note',
+    bmkgOfficial: 'BMKG',
     noData: 'No data',
     adjustFilter: 'Adjust the filters to display data',
     selectedOneLocation: '1 location selected: {location}',
@@ -201,7 +232,7 @@ const TRANSLATIONS = {
     magnitudeClassPopup: 'Magnitude class',
     estimatedRadius: 'Estimated range',
     tsunamiStatus: 'Tsunami indication',
-    estimatedDisclaimer: 'The radius is a simple visual model, not an official felt-area report or ShakeMap.',
+    estimatedDisclaimer: 'Felt-area and tsunami-potential information follows the data available in BMKG feeds.',
     depthLegend: 'Depth Class',
     bufferLegend: 'Estimated buffer',
     countUnit: 'events',
@@ -229,7 +260,11 @@ const state = {
   initialFitDone: false,
   lightBase: null,
   osmBase: null,
-  legendControl: null
+  legendControl: null,
+  dataSource: 'BMKG',
+  lastUpdated: null,
+  refreshTimer: null,
+  isRefreshing: false
 };
 
 const mobileLayoutQuery = window.matchMedia('(max-width: 1020px)');
@@ -237,6 +272,7 @@ const mobileLayoutQuery = window.matchMedia('(max-width: 1020px)');
 const elements = {
   loadingOverlay: document.getElementById('loadingOverlay'),
   periodLabel: document.getElementById('periodLabel'),
+  liveStatus: document.getElementById('liveStatus'),
   totalQuakes: document.getElementById('totalQuakes'),
   dominantDepth: document.getElementById('dominantDepth'),
   dominantDepthDetail: document.getElementById('dominantDepthDetail'),
@@ -294,11 +330,13 @@ function formatDate(dateString, options = { day: '2-digit', month: 'short', year
 
 function formatDateTime(dateTimeString) {
   const date = new Date(dateTimeString);
-  return new Intl.DateTimeFormat(currentLocale(), {
+  if (Number.isNaN(date.getTime())) return '–';
+  return `${new Intl.DateTimeFormat(currentLocale(), {
+    timeZone: 'Asia/Jakarta',
     day: '2-digit', month: 'short', year: 'numeric',
     hour: '2-digit', minute: '2-digit', second: '2-digit',
     hour12: false
-  }).format(date);
+  }).format(date)} WIB`;
 }
 
 function escapeHtml(value) {
@@ -327,14 +365,157 @@ function displayMagnitudeClass(magnitudeClass) {
   return t(keys[magnitudeClass] || 'unknown');
 }
 
-function displayTsunami(code) {
-  return code === 'verify' ? t('verifyBmkg') : t('notIndicated');
+function displayTsunami(featureProperties) {
+  return featureProperties.tsunami_potential || t('tsunamiUnavailable');
 }
 
-async function fetchJson(path) {
-  const response = await fetch(path, { cache: 'no-store' });
-  if (!response.ok) throw new Error(t('loadFileFailed', { path, status: response.status }));
-  return response.json();
+async function fetchJson(path, timeoutMs = FETCH_TIMEOUT_MS) {
+  const controller = new AbortController();
+  const timeoutId = window.setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    const separator = path.includes('?') ? '&' : '?';
+    const response = await fetch(`${path}${separator}_=${Date.now()}`, {
+      cache: 'no-store',
+      signal: controller.signal,
+      headers: { Accept: 'application/json' }
+    });
+    if (!response.ok) throw new Error(t('loadFileFailed', { path, status: response.status }));
+    return response.json();
+  } finally {
+    window.clearTimeout(timeoutId);
+  }
+}
+
+function depthClassFor(depthKm) {
+  const depth = Number(depthKm);
+  if (depth < 60) return 'Dangkal';
+  if (depth <= 300) return 'Menengah';
+  return 'Dalam';
+}
+
+function wibDateKey(dateTimeString) {
+  const date = new Date(dateTimeString);
+  if (Number.isNaN(date.getTime())) return '';
+  const parts = new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'Asia/Jakarta', year: 'numeric', month: '2-digit', day: '2-digit'
+  }).formatToParts(date);
+  const values = Object.fromEntries(parts.map((part) => [part.type, part.value]));
+  return `${values.year}-${values.month}-${values.day}`;
+}
+
+function estimatedRadiusKm(magnitude, depthKm) {
+  const magnitudeValue = Number(magnitude);
+  const depthValue = Number(depthKm);
+  const base = magnitudeValue < 3
+    ? 3 + magnitudeValue * 2.2
+    : magnitudeValue < 5
+      ? 12 + (magnitudeValue - 3) * 18
+      : 50 + (magnitudeValue - 5) * 42;
+  const depthFactor = Math.max(0.45, Math.min(1, 1 - depthValue / 650));
+  return Math.max(3, Math.round(base * depthFactor * 10) / 10);
+}
+
+function extractBmkgEvents(payload) {
+  const value = payload?.Infogempa?.gempa;
+  if (!value) return [];
+  return Array.isArray(value) ? value : [value];
+}
+
+function normalizeBmkgEvent(raw, index = 0) {
+  const coordinateValues = String(raw.Coordinates || '').split(',').map((value) => Number(value.trim()));
+  const [latitude, longitude] = coordinateValues;
+  const magnitude = Number.parseFloat(String(raw.Magnitude || '').replace(',', '.'));
+  const depthKm = Number.parseFloat(String(raw.Kedalaman || '').replace(',', '.'));
+  const datetime = raw.DateTime || '';
+  if (![latitude, longitude, magnitude, depthKm].every(Number.isFinite) || !datetime) return null;
+
+  const radiusKm = estimatedRadiusKm(magnitude, depthKm);
+  const rawPotential = String(raw.Potensi || '').trim();
+  const tsunamiPotential = /tsunami/i.test(rawPotential) ? rawPotential : '';
+  const bmkgNote = rawPotential && !tsunamiPotential ? rawPotential : '';
+  const shakemapUrl = raw.Shakemap ? `https://static.bmkg.go.id/${String(raw.Shakemap).replace(/^\/+/, '')}` : '';
+
+  return {
+    type: 'Feature',
+    geometry: { type: 'Point', coordinates: [longitude, latitude] },
+    properties: {
+      id: `${datetime}-${latitude}-${longitude}-${index}`,
+      datetime,
+      date: wibDateKey(datetime),
+      time: raw.Jam || '',
+      latitude,
+      longitude,
+      depth_km: depthKm,
+      depth_class: depthClassFor(depthKm),
+      magnitude,
+      magnitude_class: magnitudeClassFor(magnitude),
+      location: String(raw.Wilayah || t('unknown')).replace(/\s+/g, ' ').trim(),
+      estimated_radius_km: radiusKm,
+      estimated_radius_m: Math.round(radiusKm * 1000),
+      felt: String(raw.Dirasakan || '').replace(/\s+/g, ' ').trim(),
+      tsunami_potential: tsunamiPotential,
+      bmkg_note: bmkgNote,
+      shakemap_url: shakemapUrl,
+      source: 'BMKG'
+    }
+  };
+}
+
+function featureIdentity(feature) {
+  const p = feature.properties;
+  const [longitude, latitude] = feature.geometry.coordinates;
+  return `${p.datetime}|${latitude.toFixed(3)}|${longitude.toFixed(3)}|${Number(p.magnitude).toFixed(1)}`;
+}
+
+function mergeDuplicateFeatures(features) {
+  const merged = new Map();
+  features.forEach((feature) => {
+    const key = featureIdentity(feature);
+    if (!merged.has(key)) {
+      merged.set(key, feature);
+      return;
+    }
+    const current = merged.get(key);
+    const target = current.properties;
+    const incoming = feature.properties;
+    if (!target.felt && incoming.felt) target.felt = incoming.felt;
+    if (!target.tsunami_potential && incoming.tsunami_potential) target.tsunami_potential = incoming.tsunami_potential;
+    if (!target.bmkg_note && incoming.bmkg_note) target.bmkg_note = incoming.bmkg_note;
+    if (!target.shakemap_url && incoming.shakemap_url) target.shakemap_url = incoming.shakemap_url;
+    if (incoming.location.length > target.location.length) target.location = incoming.location;
+  });
+  return [...merged.values()].sort((a, b) => new Date(b.properties.datetime) - new Date(a.properties.datetime));
+}
+
+function metadataFromFeatures(features, source = 'BMKG') {
+  const dates = features.map((feature) => feature.properties.date).filter(Boolean).sort();
+  return {
+    source,
+    date_start: dates[0] || '',
+    date_end: dates[dates.length - 1] || '',
+    total_events: features.length,
+    updated_at: new Date().toISOString()
+  };
+}
+
+async function loadBmkgRealtimeData() {
+  const responses = await Promise.allSettled(Object.values(BMKG_API_PATHS).map((path) => fetchJson(path)));
+  const events = responses.flatMap((result) => result.status === 'fulfilled' ? extractBmkgEvents(result.value) : []);
+  const features = mergeDuplicateFeatures(events.map(normalizeBmkgEvent).filter(Boolean));
+  if (!features.length) throw new Error('Feed BMKG tidak mengembalikan data yang dapat diproses.');
+  return {
+    pointsData: { type: 'FeatureCollection', features },
+    metadata: metadataFromFeatures(features, 'BMKG'),
+    partialFailure: responses.some((result) => result.status === 'rejected')
+  };
+}
+
+async function loadFallbackData() {
+  const [pointsData, metadata] = await Promise.all([
+    fetchJson(FALLBACK_DATA_PATHS.points),
+    fetchJson(FALLBACK_DATA_PATHS.metadata)
+  ]);
+  return { pointsData, metadata: { ...metadata, source: 'fallback' } };
 }
 
 function hideLoading() {
@@ -355,30 +536,42 @@ function normalizeData() {
     const [lon, lat] = feature.geometry?.coordinates || [];
     const p = feature.properties || {};
     const valid = Number.isFinite(Number(lat)) && Number.isFinite(Number(lon)) && p.date;
-    if (valid) p.magnitude_class = magnitudeClassFor(p.magnitude);
-    return valid;
+    if (!valid) return false;
+    p.magnitude = Number(p.magnitude);
+    p.depth_km = Number(p.depth_km);
+    p.depth_class = p.depth_class || depthClassFor(p.depth_km);
+    p.magnitude_class = magnitudeClassFor(p.magnitude);
+    p.estimated_radius_km = Number(p.estimated_radius_km) || estimatedRadiusKm(p.magnitude, p.depth_km);
+    p.estimated_radius_m = Number(p.estimated_radius_m) || Math.round(p.estimated_radius_km * 1000);
+    p.felt = p.felt || '';
+    p.tsunami_potential = p.tsunami_potential || '';
+    p.shakemap_url = p.shakemap_url || '';
+    p.source = p.source || (state.metadata?.source === 'BMKG' ? 'BMKG' : 'Cadangan lokal');
+    return true;
   });
 
   state.locationNames = [...new Set(state.pointsData.features.map((feature) => feature.properties.location || t('unknown')))]
     .sort((a, b) => a.localeCompare(b, 'id'));
 }
 
-function initializeDateInputs() {
-  const dates = state.pointsData.features.map((feature) => feature.properties.date).sort();
+function initializeDateInputs({ preserve = false } = {}) {
+  const dates = state.pointsData.features.map((feature) => feature.properties.date).filter(Boolean).sort();
   const minDate = state.metadata?.date_start || dates[0];
   const maxDate = state.metadata?.date_end || dates[dates.length - 1];
+  const previousStart = elements.startDate.value;
+  const previousEnd = elements.endDate.value;
   elements.startDate.min = minDate;
   elements.startDate.max = maxDate;
   elements.endDate.min = minDate;
   elements.endDate.max = maxDate;
-  elements.startDate.value = minDate;
-  elements.endDate.value = maxDate;
+  elements.startDate.value = preserve && previousStart >= minDate && previousStart <= maxDate ? previousStart : minDate;
+  elements.endDate.value = preserve && previousEnd >= minDate && previousEnd <= maxDate ? previousEnd : maxDate;
 }
 
-function buildLocationOptions() {
+function buildLocationOptions({ selected = new Set(), selectAll = true } = {}) {
   elements.locationOptions.innerHTML = state.locationNames.map((name) => `
     <label class="district-option" data-search="${escapeHtml(name.toLowerCase())}">
-      <input class="location-filter" type="checkbox" value="${escapeHtml(name)}" checked />
+      <input class="location-filter" type="checkbox" value="${escapeHtml(name)}" ${selectAll || selected.has(name) ? 'checked' : ''} />
       <span>${escapeHtml(name)}</span>
     </label>
   `).join('');
@@ -482,7 +675,15 @@ function refreshLegend() {
 function popupHtml(feature) {
   const p = feature.properties;
   const coordinates = feature.geometry.coordinates;
-  const statusClass = p.tsunami_code === 'verify' ? 'popup-status verify' : 'popup-status';
+  const tsunamiText = displayTsunami(p);
+  const statusClass = /tidak berpotensi|not potential/i.test(tsunamiText) ? 'popup-status' : 'popup-status verify';
+  const feltText = p.felt || t('notFeltReported');
+  const shakemapRow = p.shakemap_url
+    ? `<span>${escapeHtml(t('shakemap'))}</span><strong><a href="${escapeHtml(p.shakemap_url)}" target="_blank" rel="noopener noreferrer">${escapeHtml(t('openShakemap'))}</a></strong>`
+    : '';
+  const bmkgNoteRow = p.bmkg_note
+    ? `<span>${escapeHtml(t('bmkgSource'))}</span><strong>${escapeHtml(p.bmkg_note)}</strong>`
+    : '';
   return `
     <div class="popup-title">
       <span class="material-symbols-outlined">earthquake</span>
@@ -496,9 +697,11 @@ function popupHtml(feature) {
       <span>${escapeHtml(t('depthClassPopup'))}</span><strong>${escapeHtml(displayDepth(p.depth_class))}</strong>
       <span>${escapeHtml(t('magnitudeClassPopup'))}</span><strong>${escapeHtml(displayMagnitudeClass(magnitudeClassFor(p.magnitude)))}</strong>
       <span>${escapeHtml(t('estimatedRadius'))}</span><strong>${formatNumber(p.estimated_radius_km, 1)} ${escapeHtml(t('km'))} (${formatNumber(p.estimated_radius_m)} ${escapeHtml(t('m'))})</strong>
-      <span>${escapeHtml(t('tsunamiStatus'))}</span><strong><span class="${statusClass}">${escapeHtml(displayTsunami(p.tsunami_code))}</span></strong>
+      <span>${escapeHtml(t('feltReport'))}</span><strong>${escapeHtml(feltText)}</strong>
+      <span>${escapeHtml(t('tsunamiPotential'))}</span><strong><span class="${statusClass}">${escapeHtml(tsunamiText)}</span></strong>
+      ${bmkgNoteRow}
+      ${shakemapRow}
     </div>
-    <p class="popup-note">${escapeHtml(t('estimatedDisclaimer'))}</p>
   `;
 }
 
@@ -598,6 +801,27 @@ function updatePeriodLabel(features) {
     end: formatDate(dates[dates.length - 1]),
     count: formatNumber(features.length)
   });
+}
+
+function updateLiveStatus(status = 'live') {
+  if (!elements.liveStatus) return;
+  if (status === 'fallback') {
+    elements.liveStatus.textContent = t('fallbackActive');
+    elements.liveStatus.classList.add('is-warning');
+    return;
+  }
+  if (status === 'error') {
+    elements.liveStatus.textContent = t('realtimeFailed');
+    elements.liveStatus.classList.add('is-warning');
+    return;
+  }
+  elements.liveStatus.classList.remove('is-warning');
+  const updated = state.lastUpdated || new Date();
+  const formatted = new Intl.DateTimeFormat(currentLocale(), {
+    timeZone: 'Asia/Jakarta', day: '2-digit', month: 'short', year: 'numeric',
+    hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false
+  }).format(updated);
+  elements.liveStatus.textContent = t('liveUpdated', { time: `${formatted} WIB` });
 }
 
 function updateStats(features) {
@@ -822,7 +1046,10 @@ function applyTranslations() {
   });
   updateLocationSelectionSummary();
   refreshLegend();
-  if (state.pointsData) applyFilters();
+  if (state.pointsData) {
+    applyFilters();
+    updateLiveStatus(state.dataSource === 'BMKG' ? 'live' : 'fallback');
+  }
 }
 
 function setLanguage(language) {
@@ -848,11 +1075,10 @@ function bindEvents() {
   document.querySelectorAll('.depth-filter, .magnitude-filter')
     .forEach((input) => input.addEventListener('change', () => applyFilters()));
 
-  document.querySelectorAll('.location-filter:not(#locationAll)').forEach((input) => {
-    input.addEventListener('change', () => {
-      syncLocationAllState();
-      applyFilters();
-    });
+  elements.locationOptions.addEventListener('change', (event) => {
+    if (!event.target.matches('.location-filter')) return;
+    syncLocationAllState();
+    applyFilters();
   });
 
   elements.locationAll.addEventListener('change', () => {
@@ -907,24 +1133,59 @@ function bindEvents() {
   window.addEventListener('resize', () => window.setTimeout(() => state.map?.invalidateSize(), 120));
 }
 
+function captureLocationFilterState() {
+  if (!state.pointsData || !elements.locationOptions.children.length) return { selectAll: true, selected: new Set() };
+  return { selectAll: elements.locationAll.checked, selected: selectedLocations() };
+}
+
+async function refreshRealtimeData({ initial = false } = {}) {
+  if (state.isRefreshing) return;
+  state.isRefreshing = true;
+  const locationState = captureLocationFilterState();
+
+  try {
+    let loaded;
+    try {
+      loaded = await loadBmkgRealtimeData();
+      state.dataSource = 'BMKG';
+      state.lastUpdated = new Date();
+    } catch (bmkgError) {
+      console.warn('BMKG realtime load failed:', bmkgError);
+      if (!initial && state.pointsData) {
+        updateLiveStatus('error');
+        return;
+      }
+      loaded = await loadFallbackData();
+      state.dataSource = 'fallback';
+      state.lastUpdated = new Date();
+    }
+
+    state.pointsData = loaded.pointsData;
+    state.metadata = loaded.metadata;
+    normalizeData();
+    initializeDateInputs({ preserve: !initial });
+    buildLocationOptions(locationState);
+    elements.locationAll.checked = locationState.selectAll;
+    syncLocationAllState();
+    filterLocationOptions();
+    applyFilters({ fit: initial });
+    updateLiveStatus(state.dataSource === 'BMKG' ? 'live' : 'fallback');
+  } finally {
+    state.isRefreshing = false;
+  }
+}
+
 async function initialize() {
   try {
-    [state.pointsData, state.metadata] = await Promise.all([
-      fetchJson(DATA_PATHS.points),
-      fetchJson(DATA_PATHS.metadata)
-    ]);
-
-    normalizeData();
-    initializeDateInputs();
-    buildLocationOptions();
     initializeMap();
     bindEvents();
 
     const savedLanguage = localStorage.getItem('quakepulse-language');
     state.language = TRANSLATIONS[savedLanguage] ? savedLanguage : 'id';
     applyTranslations();
-    syncLocationAllState();
-    applyFilters({ fit: true });
+
+    await refreshRealtimeData({ initial: true });
+    state.refreshTimer = window.setInterval(() => refreshRealtimeData(), REFRESH_INTERVAL_MS);
     hideLoading();
   } catch (error) {
     console.error(error);
