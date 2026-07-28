@@ -13,6 +13,7 @@ const FALLBACK_DATA_PATHS = {
 
 const REFRESH_INTERVAL_MS = 5 * 60 * 1000;
 const FETCH_TIMEOUT_MS = 15000;
+const DATA_MODES = ['realtime', 'monthly'];
 
 const DEPTH_CLASSES = ['Dangkal', 'Menengah', 'Dalam'];
 const MAGNITUDE_CLASSES = ['lt3', '3to5', 'gte5'];
@@ -33,6 +34,30 @@ const TRANSLATIONS = {
   id: {
     pageTitle: 'QuakePulse | Monitoring Gempa',
     loading: 'Memuat data gempa...',
+    loadingRealtime: 'Mengambil data real-time BMKG...',
+    loadingMonthly: 'Memuat rekap bulanan...',
+    modeChooserEyebrow: 'PILIH SUMBER DATA',
+    modeChooserTitle: 'Mau melihat data yang mana?',
+    modeChooserDescription: 'Kamu dapat mengganti mode kapan saja melalui tombol di bagian atas.',
+    realtimeModeTitle: 'Real-time BMKG',
+    realtimeModeDescription: 'Gempa terbaru, gempa M ≥ 5,0, dan gempa dirasakan dari feed BMKG.',
+    monthlyModeTitle: 'Rekap Bulanan',
+    monthlyModeDescription: 'Rekap 590 kejadian gempa pada periode Juni 2026.',
+    chooseMode: 'Pilih mode',
+    changeDataMode: 'Ganti mode data',
+    realtimeShort: 'Real-time',
+    monthlyShort: 'Bulanan',
+    realtimeHeroEyebrow: 'MONITORING GEMPA TERKINI BMKG',
+    monthlyHeroEyebrow: 'REKAP GEMPA BULANAN',
+    realtimeDashboardTitle: 'Dashboard Gempa Indonesia',
+    monthlyDashboardTitle: 'Rekap Gempa Juni 2026',
+    sourceRealtime: 'REAL-TIME BMKG',
+    sourceMonthly: 'REKAP JUNI 2026',
+    monthlyStatus: 'Rekap bulanan Juni 2026 • {count} kejadian',
+    footerRealtimeSource: '© 2026 QuakePulse. Sumber data real-time: BMKG.',
+    footerRealtimeDeveloper: 'Data diperbarui otomatis setiap 5 menit dari feed resmi BMKG.',
+    footerMonthlySource: '© 2026 QuakePulse. Rekap data gempa Juni 2026.',
+    footerMonthlyDeveloper: 'Rekap bulanan memuat data lokal dari gempa juni.xlsx.',
     navMap: 'Peta',
     navAnalysis: 'Analisis',
     navSummary: 'Ringkasan',
@@ -140,6 +165,30 @@ const TRANSLATIONS = {
   en: {
     pageTitle: 'QuakePulse | Earthquake Monitoring',
     loading: 'Loading earthquake data...',
+    loadingRealtime: 'Fetching real-time BMKG data...',
+    loadingMonthly: 'Loading monthly recap...',
+    modeChooserEyebrow: 'SELECT DATA SOURCE',
+    modeChooserTitle: 'Which data would you like to view?',
+    modeChooserDescription: 'You can change modes at any time using the button at the top.',
+    realtimeModeTitle: 'Real-time BMKG',
+    realtimeModeDescription: 'Latest earthquakes, M ≥ 5.0 events, and felt earthquakes from BMKG feeds.',
+    monthlyModeTitle: 'Monthly Recap',
+    monthlyModeDescription: 'Recap of 590 earthquake events during June 2026.',
+    chooseMode: 'Select mode',
+    changeDataMode: 'Change data mode',
+    realtimeShort: 'Real-time',
+    monthlyShort: 'Monthly',
+    realtimeHeroEyebrow: 'LATEST BMKG EARTHQUAKE MONITORING',
+    monthlyHeroEyebrow: 'MONTHLY EARTHQUAKE RECAP',
+    realtimeDashboardTitle: 'Indonesia Earthquake Dashboard',
+    monthlyDashboardTitle: 'June 2026 Earthquake Recap',
+    sourceRealtime: 'REAL-TIME BMKG',
+    sourceMonthly: 'JUNE 2026 RECAP',
+    monthlyStatus: 'June 2026 monthly recap • {count} events',
+    footerRealtimeSource: '© 2026 QuakePulse. Real-time data source: BMKG.',
+    footerRealtimeDeveloper: 'Data refreshes automatically every 5 minutes from official BMKG feeds.',
+    footerMonthlySource: '© 2026 QuakePulse. June 2026 earthquake recap.',
+    footerMonthlyDeveloper: 'The monthly recap uses local data from gempa juni.xlsx.',
     navMap: 'Map',
     navAnalysis: 'Analysis',
     navSummary: 'Summary',
@@ -261,6 +310,7 @@ const state = {
   lightBase: null,
   osmBase: null,
   legendControl: null,
+  mode: null,
   dataSource: 'BMKG',
   lastUpdated: null,
   refreshTimer: null,
@@ -271,6 +321,18 @@ const mobileLayoutQuery = window.matchMedia('(max-width: 1020px)');
 
 const elements = {
   loadingOverlay: document.getElementById('loadingOverlay'),
+  modeChooser: document.getElementById('modeChooser'),
+  modeChoiceButtons: [...document.querySelectorAll('[data-mode-choice]')],
+  changeModeButton: document.getElementById('changeModeButton'),
+  currentModeIcon: document.getElementById('currentModeIcon'),
+  currentModeLabel: document.getElementById('currentModeLabel'),
+  sourceBadge: document.getElementById('sourceBadge'),
+  sourceBadgeIcon: document.getElementById('sourceBadgeIcon'),
+  sourceBadgeText: document.getElementById('sourceBadgeText'),
+  heroEyebrow: document.getElementById('heroEyebrow'),
+  dashboardTitle: document.getElementById('dashboardTitle'),
+  footerSource: document.getElementById('footerSource'),
+  footerDeveloper: document.getElementById('footerDeveloper'),
   periodLabel: document.getElementById('periodLabel'),
   liveStatus: document.getElementById('liveStatus'),
   totalQuakes: document.getElementById('totalQuakes'),
@@ -510,17 +572,29 @@ async function loadBmkgRealtimeData() {
   };
 }
 
-async function loadFallbackData() {
+async function loadMonthlyData(source = 'monthly') {
   const [pointsData, metadata] = await Promise.all([
     fetchJson(FALLBACK_DATA_PATHS.points),
     fetchJson(FALLBACK_DATA_PATHS.metadata)
   ]);
-  return { pointsData, metadata: { ...metadata, source: 'fallback' } };
+  return { pointsData, metadata: { ...metadata, source } };
+}
+
+async function loadFallbackData() {
+  return loadMonthlyData('fallback');
+}
+
+function showLoading(messageKey = 'loading') {
+  elements.loadingOverlay.innerHTML = `
+    <div class="loader" aria-hidden="true"></div>
+    <p>${escapeHtml(t(messageKey))}</p>
+  `;
+  elements.loadingOverlay.classList.remove('hidden');
 }
 
 function hideLoading() {
   elements.loadingOverlay.classList.add('hidden');
-  window.setTimeout(() => elements.loadingOverlay.remove(), 300);
+  // Overlay tetap berada di DOM agar dapat digunakan kembali saat mode diganti.
 }
 
 function showLoadError(error) {
@@ -546,7 +620,7 @@ function normalizeData() {
     p.felt = p.felt || '';
     p.tsunami_potential = p.tsunami_potential || '';
     p.shakemap_url = p.shakemap_url || '';
-    p.source = p.source || (state.metadata?.source === 'BMKG' ? 'BMKG' : 'Cadangan lokal');
+    p.source = p.source || (state.dataSource === 'BMKG' ? 'BMKG' : 'Rekap bulanan');
     return true;
   });
 
@@ -805,6 +879,13 @@ function updatePeriodLabel(features) {
 
 function updateLiveStatus(status = 'live') {
   if (!elements.liveStatus) return;
+  elements.liveStatus.classList.remove('is-warning');
+  if (status === 'monthly') {
+    elements.liveStatus.textContent = t('monthlyStatus', {
+      count: formatNumber(state.pointsData?.features?.length || 0)
+    });
+    return;
+  }
   if (status === 'fallback') {
     elements.liveStatus.textContent = t('fallbackActive');
     elements.liveStatus.classList.add('is-warning');
@@ -815,7 +896,6 @@ function updateLiveStatus(status = 'live') {
     elements.liveStatus.classList.add('is-warning');
     return;
   }
-  elements.liveStatus.classList.remove('is-warning');
   const updated = state.lastUpdated || new Date();
   const formatted = new Intl.DateTimeFormat(currentLocale(), {
     timeZone: 'Asia/Jakarta', day: '2-digit', month: 'short', year: 'numeric',
@@ -1031,6 +1111,35 @@ function closeFilterPanel() {
   document.body.style.overflow = '';
 }
 
+function updateModeUI() {
+  const isRealtime = state.mode === 'realtime';
+  const hasMode = DATA_MODES.includes(state.mode);
+
+  elements.currentModeIcon.textContent = isRealtime ? 'sensors' : hasMode ? 'calendar_month' : 'database';
+  elements.currentModeLabel.textContent = isRealtime ? t('realtimeShort') : hasMode ? t('monthlyShort') : t('chooseMode');
+  elements.changeModeButton.setAttribute('aria-label', t('changeDataMode'));
+
+  if (!hasMode) return;
+
+  elements.heroEyebrow.textContent = isRealtime ? t('realtimeHeroEyebrow') : t('monthlyHeroEyebrow');
+  elements.dashboardTitle.textContent = isRealtime ? t('realtimeDashboardTitle') : t('monthlyDashboardTitle');
+  elements.sourceBadgeIcon.textContent = isRealtime ? 'sensors' : 'calendar_month';
+  elements.sourceBadgeText.textContent = isRealtime ? t('sourceRealtime') : t('sourceMonthly');
+  elements.footerSource.textContent = isRealtime ? t('footerRealtimeSource') : t('footerMonthlySource');
+  elements.footerDeveloper.textContent = isRealtime ? t('footerRealtimeDeveloper') : t('footerMonthlyDeveloper');
+}
+
+function openModeChooser() {
+  elements.modeChooser.hidden = false;
+  document.body.style.overflow = 'hidden';
+  window.setTimeout(() => elements.modeChoiceButtons[0]?.focus(), 30);
+}
+
+function closeModeChooser() {
+  elements.modeChooser.hidden = true;
+  document.body.style.overflow = '';
+}
+
 function applyTranslations() {
   document.documentElement.lang = state.language;
   document.title = t('pageTitle');
@@ -1039,6 +1148,7 @@ function applyTranslations() {
     element.textContent = t(key);
   });
   elements.languageCode.textContent = state.language.toUpperCase();
+  updateModeUI();
   document.querySelectorAll('.language-option').forEach((option) => {
     const selected = option.dataset.language === state.language;
     option.classList.toggle('is-selected', selected);
@@ -1048,7 +1158,7 @@ function applyTranslations() {
   refreshLegend();
   if (state.pointsData) {
     applyFilters();
-    updateLiveStatus(state.dataSource === 'BMKG' ? 'live' : 'fallback');
+    updateLiveStatus(state.mode === 'monthly' ? 'monthly' : state.dataSource === 'BMKG' ? 'live' : 'fallback');
   }
 }
 
@@ -1098,6 +1208,11 @@ function bindEvents() {
   elements.bottomFilterButton.addEventListener('click', openFilterPanel);
   elements.applyFilterButton.addEventListener('click', () => { applyFilters(); closeFilterPanel(); });
 
+  elements.modeChoiceButtons.forEach((button) => {
+    button.addEventListener('click', () => setDataMode(button.dataset.modeChoice));
+  });
+  elements.changeModeButton.addEventListener('click', openModeChooser);
+
   elements.languageToggle.addEventListener('click', toggleLanguageMenu);
   document.querySelectorAll('.language-option').forEach((option) => {
     option.addEventListener('click', () => setLanguage(option.dataset.language));
@@ -1139,9 +1254,11 @@ function captureLocationFilterState() {
 }
 
 async function refreshRealtimeData({ initial = false } = {}) {
-  if (state.isRefreshing) return;
+  if (state.mode !== 'realtime' || state.isRefreshing) return;
   state.isRefreshing = true;
-  const locationState = captureLocationFilterState();
+  const locationState = initial
+    ? { selectAll: true, selected: new Set() }
+    : captureLocationFilterState();
 
   try {
     let loaded;
@@ -1175,6 +1292,51 @@ async function refreshRealtimeData({ initial = false } = {}) {
   }
 }
 
+async function loadMonthlyMode({ initial = true } = {}) {
+  const loaded = await loadMonthlyData('monthly');
+  state.dataSource = 'monthly';
+  state.lastUpdated = null;
+  state.pointsData = loaded.pointsData;
+  state.metadata = loaded.metadata;
+  normalizeData();
+  initializeDateInputs({ preserve: false });
+  buildLocationOptions({ selectAll: true, selected: new Set() });
+  elements.locationAll.checked = true;
+  syncLocationAllState();
+  filterLocationOptions();
+  applyFilters({ fit: initial });
+  updateLiveStatus('monthly');
+}
+
+async function setDataMode(mode) {
+  if (!DATA_MODES.includes(mode) || state.isRefreshing) return;
+
+  if (state.refreshTimer) {
+    window.clearInterval(state.refreshTimer);
+    state.refreshTimer = null;
+  }
+
+  state.mode = mode;
+  state.initialFitDone = false;
+  updateModeUI();
+  closeModeChooser();
+  showLoading(mode === 'realtime' ? 'loadingRealtime' : 'loadingMonthly');
+
+  try {
+    if (mode === 'realtime') {
+      await refreshRealtimeData({ initial: true });
+      state.refreshTimer = window.setInterval(() => refreshRealtimeData(), REFRESH_INTERVAL_MS);
+    } else {
+      await loadMonthlyMode({ initial: true });
+    }
+    hideLoading();
+    window.setTimeout(() => state.map?.invalidateSize(), 100);
+  } catch (error) {
+    console.error(error);
+    showLoadError(error);
+  }
+}
+
 async function initialize() {
   try {
     initializeMap();
@@ -1184,9 +1346,8 @@ async function initialize() {
     state.language = TRANSLATIONS[savedLanguage] ? savedLanguage : 'id';
     applyTranslations();
 
-    await refreshRealtimeData({ initial: true });
-    state.refreshTimer = window.setInterval(() => refreshRealtimeData(), REFRESH_INTERVAL_MS);
-    hideLoading();
+    updateModeUI();
+    openModeChooser();
   } catch (error) {
     console.error(error);
     showLoadError(error);
