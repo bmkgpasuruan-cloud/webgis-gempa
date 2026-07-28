@@ -14,6 +14,7 @@
   --danger: #b42318;
   --shadow: 0 4px 16px rgba(29, 45, 84, 0.05);
 
+  /* Warna kelas kedalaman untuk titik, buffer, legenda, dan grafik. */
   --dangkal: #E53935;
   --menengah: #FBC02D;
   --dalam: #2E7D32;
@@ -480,6 +481,31 @@ tbody tr:hover { background: #fafbff; }
 .rank-badge { display: inline-grid; width: 26px; height: 26px; place-items: center; color: var(--primary); border-radius: 7px; background: var(--primary-soft); font-size: 0.67rem; font-weight: 700; }
 .metric-chip { display: inline-flex; align-items: center; padding: 0.2rem 0.45rem; color: var(--primary); border-radius: 999px; background: var(--surface-blue); font-family: "Inter", sans-serif; font-size: 0.65rem; font-weight: 700; }
 .empty-cell { padding: 1.5rem; color: var(--muted); text-align: center; }
+
+.live-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin: 0.45rem 0 0;
+  color: var(--primary);
+  font-size: 0.68rem;
+  font-weight: 600;
+}
+.live-status::before {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #2e7d32;
+  box-shadow: 0 0 0 4px rgba(46, 125, 50, 0.1);
+  content: "";
+}
+.live-status.is-warning { color: #8a5a00; }
+.live-status.is-warning::before {
+  background: #f9a825;
+  box-shadow: 0 0 0 4px rgba(249, 168, 37, 0.12);
+}
+.popup-grid a { color: var(--primary); font-weight: 700; text-decoration: none; }
+.popup-grid a:hover { text-decoration: underline; }
 
 .footer {
   display: flex;
