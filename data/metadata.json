@@ -1,47 +1,47 @@
 {
   "title": "QuakePulse - Monitoring Gempa",
-  "dataset_name": "Gempa 30 Juni–31 Juli 2026",
-  "period_label_id": "30 Juni–31 Juli 2026",
-  "period_label_en": "June 30–July 31, 2026",
-  "period_short_id": "30 JUNI–31 JULI 2026",
-  "period_short_en": "JUNE 30–JULY 31, 2026",
+  "dataset_name": "Gempa Juli 2026",
+  "period_label_id": "Juli 2026",
+  "period_label_en": "July 2026",
+  "period_short_id": "JULI 2026",
+  "period_short_en": "JULY 2026",
   "source_file": "data-gempa.xlsx",
-  "source_sheet": "Sheet1",
-  "record_count": 604,
+  "source_sheet": "Rekap Juli 2026",
+  "record_count": 586,
   "invalid_row_count": 0,
   "duplicate_row_count": 0,
-  "date_start": "2026-06-30",
+  "date_start": "2026-07-01",
   "date_end": "2026-07-31",
-  "datetime_start": "2026-06-30T00:04:31",
-  "datetime_end": "2026-07-31T23:44:22",
+  "datetime_start": "2026-07-01T00:23:00",
+  "datetime_end": "2026-07-31T23:28:42",
   "magnitude_min": 1.0,
   "magnitude_max": 6.3,
   "magnitude_average": 2.74,
   "depth_min_km": 0.0,
   "depth_max_km": 750.0,
-  "depth_average_km": 48.11,
+  "depth_average_km": 48.02,
   "depth_class_counts": {
-    "Dangkal": 490,
-    "Menengah": 101,
-    "Dalam": 13
+    "Menengah": 98,
+    "Dangkal": 476,
+    "Dalam": 12
   },
   "magnitude_class_counts": {
-    "lt3": 458,
-    "3to5": 123,
-    "gte5": 23
+    "lt3": 444,
+    "3to5": 120,
+    "gte5": 22
   },
   "top_locations": [
     {
       "location": "Java, Indonesia",
-      "count": 379
+      "count": 370
     },
     {
       "location": "South of Java, Indonesia",
-      "count": 154
+      "count": 148
     },
     {
       "location": "South of Bali, Indonesia",
-      "count": 25
+      "count": 23
     },
     {
       "location": "Bali Region, Indonesia",
@@ -99,9 +99,9 @@
     "depth": "Depth/km",
     "magnitude": "Magnitude",
     "location": "EventLocationName",
-    "date": "Time",
-    "time": "ime"
+    "date": "Tanggal",
+    "time": "Waktu"
   },
-  "generated_at": "2026-08-03T03:43:32+00:00",
+  "generated_at": "2026-08-03T03:56:49+00:00",
   "generator": "tools/update_data_gempa.py"
 }

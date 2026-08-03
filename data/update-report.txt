@@ -1,9 +1,9 @@
 LAPORAN UPDATE DATA GEMPA
 ========================================
 File sumber       : data-gempa.xlsx
-Sheet             : Sheet1
-Periode           : 30 Juni–31 Juli 2026
-Baris valid       : 604
+Sheet             : Rekap Juli 2026
+Periode           : Juli 2026
+Baris valid       : 586
 Baris tidak valid : 0
 Duplikat dilewati : 0
 
@@ -14,5 +14,5 @@ Pemetaan kolom:
 - depth: Depth/km
 - magnitude: Magnitude
 - location: EventLocationName
-- date: Time
-- time: ime
+- date: Tanggal
+- time: Waktu
