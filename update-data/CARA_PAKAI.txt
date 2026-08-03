@@ -1,0 +1,45 @@
+CARA UPDATE REKAP BULANAN
+==========================
+
+CARA PALING MUDAH DI KOMPUTER
+1. Ganti file update-data/data-gempa.xlsx dengan Excel terbaru.
+2. Klik dua kali UPDATE_DATA_GEMPA.bat.
+3. Script otomatis memperbarui:
+   - data/gempa.geojson
+   - data/metadata.json
+   - data/update-report.txt
+4. Upload/commit file yang berubah ke GitHub.
+
+BISA JUGA DRAG & DROP
+Seret file Excel mana pun ke ikon UPDATE_DATA_GEMPA.bat. Nama file tidak harus sama.
+
+UPDATE OTOMATIS DI GITHUB
+Setelah semua file paket ini diunggah ke repository, cukup ganti
+update-data/data-gempa.xlsx di GitHub. GitHub Actions akan menjalankan script dan
+meng-commit data/gempa.geojson serta data/metadata.json secara otomatis.
+
+KOLOM YANG WAJIB ADA
+- Tanggal atau DateTime
+- Latitude/Lintang
+- Longitude/Bujur
+- Depth/Kedalaman
+- Magnitude/Magnitudo
+
+Kolom lokasi disarankan. Kolom Dirasakan, Potensi Tsunami, ShakeMap, dan Catatan
+bersifat opsional. Script mengenali beberapa variasi nama kolom Indonesia/Inggris.
+
+KELAS OTOMATIS
+Kedalaman:
+- Dangkal: < 60 km
+- Menengah: 60-300 km
+- Dalam: > 300 km
+
+Magnitudo:
+- M < 3,0
+- 3,0 <= M < 5,0
+- M >= 5,0
+
+PENTING
+- Format file harus .xlsx, bukan .xls.
+- Jangan membuka file data-gempa.xlsx saat script lokal sedang berjalan.
+- Cek data/update-report.txt setelah pembaruan untuk melihat baris yang dilewati.

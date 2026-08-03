@@ -1,0 +1,18 @@
+LAPORAN UPDATE DATA GEMPA
+========================================
+File sumber       : data-gempa.xlsx
+Sheet             : Sheet1
+Periode           : 31 Mei–30 Juni 2026
+Baris valid       : 590
+Baris tidak valid : 0
+Duplikat dilewati : 0
+
+Pemetaan kolom:
+- id: No
+- latitude: Latitude
+- longitude: Longitude
+- depth: Depth/km
+- magnitude: Magnitude
+- location: EventLocationName
+- date: Time
+- time: ime

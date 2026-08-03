@@ -1,0 +1,98 @@
+{
+  "title": "QuakePulse - Monitoring Gempa",
+  "dataset_name": "Gempa 31 Mei–30 Juni 2026",
+  "period_label_id": "31 Mei–30 Juni 2026",
+  "period_label_en": "May 31–June 30, 2026",
+  "period_short_id": "31 MEI–30 JUNI 2026",
+  "period_short_en": "MAY 31–JUNE 30, 2026",
+  "source_file": "data-gempa.xlsx",
+  "source_sheet": "Sheet1",
+  "record_count": 590,
+  "invalid_row_count": 0,
+  "duplicate_row_count": 0,
+  "date_start": "2026-05-31",
+  "date_end": "2026-06-30",
+  "datetime_start": "2026-05-31T17:09:52",
+  "datetime_end": "2026-06-30T20:35:33",
+  "magnitude_min": 0.79,
+  "magnitude_max": 5.6,
+  "magnitude_average": 2.41,
+  "depth_min_km": 3.14,
+  "depth_max_km": 240.0,
+  "depth_average_km": 35.87,
+  "depth_class_counts": {
+    "Dangkal": 474,
+    "Menengah": 116
+  },
+  "magnitude_class_counts": {
+    "lt3": 522,
+    "3to5": 67,
+    "gte5": 1
+  },
+  "top_locations": [
+    {
+      "location": "Java, Indonesia",
+      "count": 452
+    },
+    {
+      "location": "South of Java, Indonesia",
+      "count": 117
+    },
+    {
+      "location": "South of Bali, Indonesia",
+      "count": 8
+    },
+    {
+      "location": "Bali Sea",
+      "count": 6
+    },
+    {
+      "location": "Bali Region, Indonesia",
+      "count": 3
+    },
+    {
+      "location": "Java Sea",
+      "count": 2
+    },
+    {
+      "location": "Northwest of Australia",
+      "count": 1
+    },
+    {
+      "location": "di laut pada jarak 96 Km arah Tenggara Pacitan",
+      "count": 1
+    }
+  ],
+  "coordinate_bounds": {
+    "south": -12.47861481,
+    "north": -5.42447186,
+    "west": 107.01663971,
+    "east": 114.41581726
+  },
+  "depth_class_definition": {
+    "Dangkal": "< 60 km",
+    "Menengah": "60-300 km",
+    "Dalam": "> 300 km"
+  },
+  "magnitude_class_definition": {
+    "lt3": "M < 3,0",
+    "3to5": "3,0 ≤ M < 5,0",
+    "gte5": "M ≥ 5,0"
+  },
+  "buffer_method": {
+    "label": "Estimasi jangkauan getaran untuk visualisasi",
+    "formula": "Mengikuti fungsi buffer pada app.js berdasarkan magnitudo dan faktor kedalaman."
+  },
+  "column_mapping": {
+    "id": "No",
+    "latitude": "Latitude",
+    "longitude": "Longitude",
+    "depth": "Depth/km",
+    "magnitude": "Magnitude",
+    "location": "EventLocationName",
+    "date": "Time",
+    "time": "ime"
+  },
+  "generated_at": "2026-07-28T07:10:42+00:00",
+  "generator": "tools/update_data_gempa.py"
+}
