@@ -386,7 +386,7 @@ function formatNumber(value, maximumFractionDigits = 0) {
 }
 
 function formatDate(dateString, options = { day: '2-digit', month: 'short', year: 'numeric' }) {
-  if (!dateString) return '–';
+  if (!dateString) return '-';
   const date = new Date(`${dateString}T00:00:00`);
   return new Intl.DateTimeFormat(currentLocale(), options).format(date);
 }
@@ -446,7 +446,7 @@ function updateMonthlyChooserText() {
 
 function formatDateTime(dateTimeString) {
   const date = new Date(dateTimeString);
-  if (Number.isNaN(date.getTime())) return '–';
+  if (Number.isNaN(date.getTime())) return '-';
   return `${new Intl.DateTimeFormat(currentLocale(), {
     timeZone: 'Asia/Jakarta',
     day: '2-digit', month: 'short', year: 'numeric',
@@ -960,11 +960,11 @@ function updateStats(features) {
   elements.totalQuakes.textContent = formatNumber(features.length);
 
   if (!features.length) {
-    elements.dominantDepth.textContent = '–';
+    elements.dominantDepth.textContent = '-';
     elements.dominantDepthDetail.textContent = t('noData');
-    elements.strongestMagnitude.textContent = '–';
+    elements.strongestMagnitude.textContent = '-';
     elements.strongestMagnitudeDetail.textContent = t('noData');
-    elements.averageDepth.textContent = '–';
+    elements.averageDepth.textContent = '-';
     elements.averageDepthDetail.textContent = t('kilometersBelowSurface');
     return;
   }
