@@ -1,0 +1,39 @@
+name: Update Rekap Gempa dari Excel
+
+on:
+  push:
+    paths:
+      - "update-data/data-gempa.xlsx"
+      - "tools/update_data_gempa.py"
+      - ".github/workflows/update-data-gempa.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  update-data:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ambil repository
+        uses: actions/checkout@v4
+
+      - name: Siapkan Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Konversi Excel ke data WebGIS
+        run: python tools/update_data_gempa.py update-data/data-gempa.xlsx --project-root .
+
+      - name: Commit hasil otomatis
+        run: |
+          if git diff --quiet -- data/gempa.geojson data/metadata.json data/update-report.txt; then
+            echo "Tidak ada perubahan data."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add data/gempa.geojson data/metadata.json data/update-report.txt
+          git commit -m "Update rekap data gempa dari Excel"
+          git push
