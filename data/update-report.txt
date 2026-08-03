@@ -2,8 +2,8 @@ LAPORAN UPDATE DATA GEMPA
 ========================================
 File sumber       : data-gempa.xlsx
 Sheet             : Sheet1
-Periode           : 31 Mei–30 Juni 2026
-Baris valid       : 590
+Periode           : 30 Juni–31 Juli 2026
+Baris valid       : 604
 Baris tidak valid : 0
 Duplikat dilewati : 0
 
