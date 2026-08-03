@@ -106,7 +106,6 @@ small { color: var(--muted); }
 }
 @keyframes spin { to { transform: rotate(360deg); } }
 
-/* Pemilih sumber data yang muncul saat website pertama dibuka. */
 .mode-chooser {
   position: fixed;
   inset: 0;
